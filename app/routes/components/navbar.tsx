@@ -31,9 +31,11 @@ export default function Navbar() {
 
   function handleChange(value) {
     setSearchQuery(value);
-    setFilteredCities(citiesFetcher.data.filter((city) =>
-      city.name.toLowerCase().includes(searchQuery.toLowerCase())
-    ));
+    setFilteredCities(
+      citiesFetcher.data.filter((city) =>
+        city.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
   }
 
   return (
@@ -58,11 +60,8 @@ export default function Navbar() {
               <ComboboxPopover>
                 <ComboboxList>
                   {filteredCities.slice(0, 10).map((city) => (
-                    <ComboboxOption
-                      key={city.code}
-                      value={city.code}
-                    >
-                      {city.name}   
+                    <ComboboxOption key={city.code} value={city.code}>
+                      {city.name}
                     </ComboboxOption>
                   ))}
                 </ComboboxList>
