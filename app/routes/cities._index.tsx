@@ -11,7 +11,7 @@ export async function action({ request }: ActionArgs) {
 export default function CitiesIndex() {
   return (
     <div>
-      <Outlet />
+      <Outlet />      
     </div>
   );
 }
