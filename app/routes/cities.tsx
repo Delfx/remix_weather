@@ -1,6 +1,6 @@
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { Outlet, useFetcher, useLoaderData } from "@remix-run/react";
 import { Card } from "./components/card";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface City {
   code: string;
@@ -16,10 +16,22 @@ export const loader = async () => {
   return allCities;
 };
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 12;
 const VISIBLE_PAGES = 5;
 
 export default function Cities() {
+  const fetcher = useFetcher();
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data == null) {
+      fetcher.load(`/cities/${"kaunas"}`);
+    }
+  }, [fetcher]);
+
+  if (fetcher.data) {
+    console.log(fetcher.data.data);
+  }
+
   const data: City[] = useLoaderData<City[]>();
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -46,14 +58,17 @@ export default function Cities() {
     startPage = Math.max(startPage, 1);
     const endPage = Math.min(startPage + VISIBLE_PAGES - 1, totalPages);
     startPage = Math.max(endPage - VISIBLE_PAGES + 1, 1);
-    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+    return Array.from(
+      { length: endPage - startPage + 1 },
+      (_, i) => startPage + i
+    );
   }
 
   return (
     <div>
       <Outlet />
 
-      <div className="grid gap-5 grid-col-1 md:grid-cols-3 mt-5">
+      <div className="grid gap-5 grid-col-1 md:grid-cols-3 sm:mt-5 sm:me-0 m-3">
         {currentCities.map((city) => (
           <a href={"/cities/" + city.code} key={city.code}>
             <Card city={city.name} />
@@ -61,7 +76,7 @@ export default function Cities() {
         ))}
       </div>
 
-      <div className="mt-5 flex justify-center pagination">
+      <div className="mt-11 flex justify-center pagination">
         <div className="btn-group">
           <button
             className="btn"
@@ -72,7 +87,9 @@ export default function Cities() {
           </button>
           {visiblePageNumbers.map((pageNumber) => (
             <button
-              className={`btn ${pageNumber === currentPage ? "btn-active" : ""}`}
+              className={`btn ${
+                pageNumber === currentPage ? "btn-active" : ""
+              }`}
               onClick={() => handlePageChange(pageNumber)}
               key={pageNumber}
             >

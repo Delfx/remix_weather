@@ -1,25 +1,47 @@
-import { ActionArgs, LoaderArgs, json } from "@remix-run/node";
-import { Outlet, useLoaderData } from "@remix-run/react";
-import Index from "./_index";
+import { ActionArgs, LoaderArgs } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
 
-export const loader = async ({ params }: LoaderArgs) => {
-  const cityName = params.cityName;
+interface City {
+  code: string;
+  name: string;
+}
+
+interface ForecastTimestamp {
+  forecastTimeUtc: string;
+  airTemperature: number;
+  windSpeed: number;
+  feelsLikeTemperature: number;
+  cloudCover: number;
+  relativeHumidity: number;
+}
+
+
+interface LoaderData {
+  city: string;
+  data: {
+    elementName: string;
+    data: string;
+  }[];
+}
+
+export const loader = async ({ params }: LoaderArgs): Promise<LoaderData> => {
+  const cityName = params.cityName ?? "";
 
   const responsePlaces = await fetch(`https://api.meteo.lt/v1/places/`);
-  const allCities = await responsePlaces.json();
+  const allCities: City[] = await responsePlaces.json();
 
   // Search for the city in the allCities array
-  const city = allCities.find((item: { code: string }) =>
+  const city = allCities.find((item: City) =>
     item.code.toLowerCase().includes(cityName.toLowerCase())
   );
 
   const response = await fetch(
-    `https://api.meteo.lt/v1/places/${city.code}/forecasts/long-term`
+    `https://api.meteo.lt/v1/places/${city?.code || "kaunas"}/forecasts/long-term`
   );
-  const cityLongTermData = await response.json();
+  const cityLongTermData: { forecastTimestamps: ForecastTimestamp[] } = await response.json();
 
   const cityDataByDate = cityLongTermData.forecastTimestamps.filter(
-    (element: any) => {
+    (element: ForecastTimestamp) => {
       const today = new Date().toISOString().substring(0, 10); // Get today's date
       const date = element.forecastTimeUtc.substring(0, 10);
 
@@ -27,9 +49,9 @@ export const loader = async ({ params }: LoaderArgs) => {
     }
   );
 
-  function calculateAverage(cityDataByDate: any[], property: string): string {
+  function calculateAverage(cityDataByDate: ForecastTimestamp[], property: keyof ForecastTimestamp): string {
     const sum = cityDataByDate.reduce(
-      (total, forecast) => total + forecast[property],
+      (total, forecast) => total + Number(forecast[property]),
       0
     );
     const average = (sum / cityDataByDate.length).toFixed(1);
@@ -52,7 +74,7 @@ export const loader = async ({ params }: LoaderArgs) => {
   );
 
   return {
-    city: city.name,
+    city: city?.name || "",
     data: [
       {
         elementName: "Temperature Today",
@@ -83,10 +105,9 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function CitiesName() {
-  const data = useLoaderData<typeof loader>();
+  const data = useLoaderData<LoaderData>();
 
   if (!data) {
-    // Handle the case where data is undefined (loading state)
     return <div>Loading...</div>;
   }
 

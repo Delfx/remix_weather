@@ -1,8 +1,38 @@
-import { ActionArgs, V2_MetaFunction, json, redirect } from "@remix-run/node";
-import { Form, Outlet, useLoaderData } from "@remix-run/react";
+import { V2_MetaFunction } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
 import { Card } from "./components/card";
 
 let citiesMap: string[] = ["vilnius", "kaunas", "klaipeda"];
+
+export interface Root {
+  place: Place;
+  forecastType: string;
+  forecastCreationTimeUtc: string;
+  forecastTimestamps: ForecastTimestamp[];
+}
+
+export interface Place {
+  code: string;
+  name: string;
+  administrativeDivision: string;
+  country: string;
+  countryCode: string;
+  coordinates: number;
+}
+
+export interface ForecastTimestamp {
+  forecastTimeUtc: string;
+  airTemperature: number;
+  feelsLikeTemperature: number;
+  windSpeed: number;
+  windGust: number;
+  windDirection: number;
+  cloudCover: number;
+  seaLevelPressure: number;
+  relativeHumidity?: number;
+  totalPrecipitation: number;
+  conditionCode: string;
+}
 
 export const meta: V2_MetaFunction = () => {
   return [{ title: "New Remix App" }];
@@ -13,7 +43,7 @@ export const loader = async () => {
     const response = await fetch(
       `https://api.meteo.lt/v1/places/${city}/forecasts/long-term`
     );
-    return response.json();
+    return response.json() as Promise<Root>;
   });
 
   const citiesData = await Promise.all(fetchPromises);
@@ -22,14 +52,14 @@ export const loader = async () => {
     const today = new Date().toISOString().substring(0, 10); // Get today's date
 
     const todayTimestamps = cityData.forecastTimestamps.filter(
-      (forecast: any) => {
+      (forecast: ForecastTimestamp) => {
         const date = forecast.forecastTimeUtc.substring(0, 10); // Extract date from forecast timestamp
         return date === today;
       }
     );
 
     const averageTempToday = (
-      todayTimestamps.reduce((sum: any, forecast: any) => {
+      todayTimestamps.reduce((sum, forecast) => {
         return sum + forecast.airTemperature;
       }, 0) / todayTimestamps.length
     ).toFixed(1);
@@ -37,14 +67,12 @@ export const loader = async () => {
     return {
       code: cityData.place.code,
       name: cityData.place.name,
-      averageTempToday: averageTempToday,
+      averageTempToday: parseFloat(averageTempToday),
     };
   });
 
   return { cities };
 };
-
-
 
 export default function Index() {
   const data = useLoaderData<typeof loader>();

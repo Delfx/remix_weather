@@ -7,12 +7,17 @@ import {
   ComboboxOption,
 } from "@reach/combobox";
 import "@reach/combobox/styles.css";
-import { useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
+
+interface City {
+  code: string;
+  name: string;
+}
 
 export default function Navbar() {
-  const citiesFetcher = useFetcher();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredCities, setFilteredCities] = useState([]);
+  const citiesFetcher = useFetcher<{ data: City[] }>(); // Add type annotation for citiesFetcher
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [filteredCities, setFilteredCities] = useState<City[]>([]); // Add type annotation for filteredCities
 
   useEffect(() => {
     if (citiesFetcher.state === "idle" && citiesFetcher.data == null) {
@@ -22,26 +27,28 @@ export default function Navbar() {
 
   useEffect(() => {
     if (citiesFetcher.data) {
-      const filtered = citiesFetcher.data.filter((city) =>
-        city.name.toLowerCase().includes(searchQuery.toLowerCase())
+      const filtered = (citiesFetcher.data as unknown as City[]).filter(
+        (city) => city.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredCities(filtered);
     }
   }, [citiesFetcher.data, searchQuery]);
 
-  function handleChange(value) {    
+  function handleChange(value: string) {
     setSearchQuery(value);
     setFilteredCities(
-      citiesFetcher.data.filter((city) =>
+      (citiesFetcher.data as unknown as City[]).filter((city) =>
         city.name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     );
   }
 
-  function handleSelectCity(item) {
+  function handleSelectCity(item: string) { 
     setSearchQuery(item);
-    const form = document.querySelector("Form");
-    const input = form.querySelector('input[name="cityName"]');
+    const form = document.querySelector("Form") as HTMLFormElement;
+    const input = form.querySelector(
+      'input[name="cityName"]'
+    ) as HTMLInputElement;
     input.value = item;
     form.submit();
   }
@@ -51,13 +58,17 @@ export default function Navbar() {
       <ul className="menu menu-horizontal px-1 flex-auto">
         <li className="text-xl">
           <a href="/">Home</a>
+          <a href="/cities">All Cities</a>
         </li>
       </ul>
 
       <Form action="/cities?index" method="post" autoComplete="off">
         <div className="form-control">
           <div className="flex">
-            <Combobox aria-label="choose a city"   onSelect={(item) => handleSelectCity(item)}>
+            <Combobox
+              aria-label="choose a city"
+              onSelect={(item: string) => handleSelectCity(item)} // Add type annotation for item
+            >
               <ComboboxInput
                 name="cityName"
                 type="text"
@@ -65,7 +76,6 @@ export default function Navbar() {
                 className="input input-bordered"
                 onChange={(event) => handleChange(event.target.value)}
                 value={searchQuery}
-
               />
               <ComboboxPopover>
                 <ComboboxList>
@@ -73,8 +83,6 @@ export default function Navbar() {
                     <ComboboxOption
                       key={city.code}
                       value={city.code}
-                      onSelect={() => handleSelectCity(city)}
-
                     >
                       {city.name}
                     </ComboboxOption>
@@ -82,7 +90,6 @@ export default function Navbar() {
                 </ComboboxList>
               </ComboboxPopover>
             </Combobox>
-
           </div>
         </div>
       </Form>
