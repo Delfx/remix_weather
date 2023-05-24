@@ -102,10 +102,6 @@ export const loader = async () => {
 export default function Index() {
   const data = useLoaderData<typeof loader>();
 
-  console.log(data);
-  
-
-
   return (
     <div className="">
       <div className="grid gap-5 grid-col-1 md:grid-cols-3 mt-5">
