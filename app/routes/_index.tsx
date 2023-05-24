@@ -111,8 +111,8 @@ export default function Index() {
       <div className="grid gap-5 grid-col-1 md:grid-cols-3 mt-5">
         {data.cities.map((cityData, index) => (
           <div key={index}>
-            <a href={"/cities/" + cityData.code}>
-              <Card city={cityData.name} temp={cityData.averageTempToday} />
+            <a href={"/cities/" + cityData?.code}>
+              <Card city={cityData?.name} temp={cityData?.averageTempToday} />
             </a>
           </div>
         ))}
