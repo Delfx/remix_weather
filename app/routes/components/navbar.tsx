@@ -7,7 +7,7 @@ import {
   ComboboxOption,
 } from "@reach/combobox";
 import "@reach/combobox/styles.css";
-import { SetStateAction, useEffect, useState } from "react";
+import {useEffect, useState } from "react";
 
 interface City {
   code: string;

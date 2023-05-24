@@ -1,8 +1,9 @@
 import { V2_MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { Card } from "./components/card";
-
-let citiesMap: string[] = ["vilnius", "kaunas", "klaipeda"];
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "~/utils/db.server";
 
 export interface Root {
   place: Place;
@@ -39,43 +40,71 @@ export const meta: V2_MetaFunction = () => {
 };
 
 export const loader = async () => {
-  const fetchPromises = citiesMap.map(async (city) => {
-    const response = await fetch(
-      `https://api.meteo.lt/v1/places/${city}/forecasts/long-term`
-    );
-    return response.json() as Promise<Root>;
-  });
+  const fetchDataFromFirestore = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "cities"));
+      const data = querySnapshot.docs.map((doc) => doc.data());
+      return data;
+    } catch (error) {
+      console.log("Error fetching data from Firestore: ", error);
+      return [];
+    }
+  };
 
-  const citiesData = await Promise.all(fetchPromises);
+  const fetchWeatherData = async (city: string) => {
+    try {
+      const response = await fetch(
+        `https://api.meteo.lt/v1/places/${city}/forecasts/long-term`
+      );
+      return response.json() as Promise<Root>;
+    } catch (error) {
+      console.log("Error fetching weather data: ", error);
+      return null;
+    }
+  };
 
-  const cities = citiesData.map((cityData) => {
-    const today = new Date().toISOString().substring(0, 10); // Get today's date
+  const citiesData = await fetchDataFromFirestore();
 
-    const todayTimestamps = cityData.forecastTimestamps.filter(
-      (forecast: ForecastTimestamp) => {
-        const date = forecast.forecastTimeUtc.substring(0, 10); // Extract date from forecast timestamp
-        return date === today;
+  const cities = await Promise.all(
+    citiesData.map(async (cityData: any) => {
+      const weatherData = await fetchWeatherData(cityData.code);
+
+      if (weatherData) {
+        const today = new Date().toISOString().substring(0, 10);
+
+        const todayTimestamps = weatherData.forecastTimestamps.filter(
+          (forecast: ForecastTimestamp) => {
+            const date = forecast.forecastTimeUtc.substring(0, 10);
+            return date === today;
+          }
+        );
+
+        const averageTempToday = (
+          todayTimestamps.reduce((sum, forecast) => {
+            return sum + forecast.airTemperature;
+          }, 0) / todayTimestamps.length
+        ).toFixed(1);
+
+        return {
+          code: cityData.code,
+          name: cityData.name,
+          averageTempToday: parseFloat(averageTempToday),
+        };
       }
-    );
 
-    const averageTempToday = (
-      todayTimestamps.reduce((sum, forecast) => {
-        return sum + forecast.airTemperature;
-      }, 0) / todayTimestamps.length
-    ).toFixed(1);
+      return null;
+    })
+  );
 
-    return {
-      code: cityData.place.code,
-      name: cityData.place.name,
-      averageTempToday: parseFloat(averageTempToday),
-    };
-  });
-
-  return { cities };
+  return { cities: cities.filter((city) => city !== null) };
 };
 
 export default function Index() {
   const data = useLoaderData<typeof loader>();
+
+  console.log(data);
+  
+
 
   return (
     <div className="">

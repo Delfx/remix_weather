@@ -1,6 +1,6 @@
-import { Outlet, useFetcher, useLoaderData } from "@remix-run/react";
+import { Outlet, useLoaderData } from "@remix-run/react";
 import { Card } from "./components/card";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface City {
   code: string;
@@ -20,18 +20,6 @@ const ITEMS_PER_PAGE = 12;
 const VISIBLE_PAGES = 5;
 
 export default function Cities() {
-  const fetcher = useFetcher();
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data == null) {
-      fetcher.load(`/cities/${"kaunas"}`);
-    }
-  }, [fetcher]);
-
-  if (fetcher.data) {
-    console.log(fetcher.data.data);
-  }
-
   const data: City[] = useLoaderData<City[]>();
   const [currentPage, setCurrentPage] = useState(1);
 
