@@ -1,5 +1,6 @@
 import { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import { AddButton } from "./components/addButton";
 
 interface City {
   code: string;
@@ -15,9 +16,9 @@ interface ForecastTimestamp {
   relativeHumidity: number;
 }
 
-
 interface LoaderData {
   city: string;
+  code: string;
   data: {
     elementName: string;
     data: string;
@@ -36,9 +37,12 @@ export const loader = async ({ params }: LoaderArgs): Promise<LoaderData> => {
   );
 
   const response = await fetch(
-    `https://api.meteo.lt/v1/places/${city?.code || "kaunas"}/forecasts/long-term`
+    `https://api.meteo.lt/v1/places/${
+      city?.code || "kaunas"
+    }/forecasts/long-term`
   );
-  const cityLongTermData: { forecastTimestamps: ForecastTimestamp[] } = await response.json();
+  const cityLongTermData: { forecastTimestamps: ForecastTimestamp[] } =
+    await response.json();
 
   const cityDataByDate = cityLongTermData.forecastTimestamps.filter(
     (element: ForecastTimestamp) => {
@@ -49,7 +53,10 @@ export const loader = async ({ params }: LoaderArgs): Promise<LoaderData> => {
     }
   );
 
-  function calculateAverage(cityDataByDate: ForecastTimestamp[], property: keyof ForecastTimestamp): string {
+  function calculateAverage(
+    cityDataByDate: ForecastTimestamp[],
+    property: keyof ForecastTimestamp
+  ): string {
     const sum = cityDataByDate.reduce(
       (total, forecast) => total + Number(forecast[property]),
       0
@@ -75,6 +82,7 @@ export const loader = async ({ params }: LoaderArgs): Promise<LoaderData> => {
 
   return {
     city: city?.name || "",
+    code: city?.code || "",
     data: [
       {
         elementName: "Temperature Today",
@@ -137,6 +145,13 @@ export default function CitiesName() {
             ))}
           </tbody>
         </table>
+        <div className="mt-4">
+          <AddButton
+            cityId={data.code}
+            cityName={data.city}
+            cityCode={data.code}
+          />
+        </div>
       </div>
     </div>
   );

@@ -43,7 +43,12 @@ export const loader = async () => {
   const fetchDataFromFirestore = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "cities"));
-      const data = querySnapshot.docs.map((doc) => doc.data());
+      const data = querySnapshot.docs.map((doc) => {
+        return {
+          id: doc.id, 
+          ...doc.data(),
+        };
+      });
       return data;
     } catch (error) {
       console.log("Error fetching data from Firestore: ", error);
@@ -64,7 +69,6 @@ export const loader = async () => {
   };
 
   const citiesData = await fetchDataFromFirestore();
-
   const cities = await Promise.all(
     citiesData.map(async (cityData: any) => {
       const weatherData = await fetchWeatherData(cityData.code);
@@ -86,6 +90,7 @@ export const loader = async () => {
         ).toFixed(1);
 
         return {
+          id: cityData.id,
           code: cityData.code,
           name: cityData.name,
           averageTempToday: parseFloat(averageTempToday),
@@ -101,15 +106,24 @@ export const loader = async () => {
 
 export default function Index() {
   const data = useLoaderData<typeof loader>();
+  const [cities, setCities] = useState(data.cities); // add this line
+
+  const deleteCity = (id: string) => { 
+    setCities(cities.filter(city => city?.id !== id));
+  };
 
   return (
     <div className="">
       <div className="grid gap-5 grid-col-1 md:grid-cols-3 mt-5">
-        {data.cities.map((cityData, index) => (
+        {cities.map((cityData, index) => (
           <div key={index}>
-            <a href={"/cities/" + cityData?.code}>
-              <Card city={cityData?.name} temp={cityData?.averageTempToday} />
-            </a>
+            <Card
+              id={cityData?.id} // pass the document ID here
+              city={cityData?.name}
+              temp={cityData?.averageTempToday}
+              code={cityData?.code}
+              onDelete={() => deleteCity(cityData?.id)} // pass the deleteCity function
+            />
           </div>
         ))}
       </div>
