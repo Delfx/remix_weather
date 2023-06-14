@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   getAuth,
   signInWithEmailAndPassword,
@@ -6,10 +6,39 @@ import {
   signInWithPopup,
   FacebookAuthProvider,
 } from "firebase/auth";
+import { useLoaderData } from "@remix-run/react";
+import { json, redirect } from "@remix-run/node";
+import { auth } from "~/utils/firebaseConfig";
+
+
+export const loader = async ({ request }) => {
+    return new Promise((resolve) => {
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          // If user is logged in, redirect to index page
+          resolve(redirect("/", { headers: { "Set-Cookie": `userId=${user.uid}` } }));
+        } else {
+          // If user is not logged in, just continue loading the login page
+          console.log('test');
+          resolve(json({ user: null }));
+        }
+      });
+    });
+  };
 
 export default function Login() {
+  const [user, setUser] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+      setUser(firebaseUser);
+    });
+    // Clean up subscription on unmount
+    return () => unsubscribe();
+  }, []);
 
   const onSubmit = async (e) => {
     e.preventDefault();

@@ -6,3 +6,4 @@ node_modules
 .env
 /app/utils/db.server.js
 /app/utils/db.client.js
+/app/utils/

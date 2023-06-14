@@ -3,6 +3,7 @@ import { useLoaderData } from "@remix-run/react";
 import { Card } from "./components/card";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { db } from "~/utils/db.server";
 
 export interface Root {
@@ -45,7 +46,7 @@ export const loader = async () => {
       const querySnapshot = await getDocs(collection(db, "cities"));
       const data = querySnapshot.docs.map((doc) => {
         return {
-          id: doc.id, 
+          id: doc.id,
           ...doc.data(),
         };
       });
@@ -106,10 +107,30 @@ export const loader = async () => {
 
 export default function Index() {
   const data = useLoaderData<typeof loader>();
-  const [cities, setCities] = useState(data.cities); // add this line
+  const [cities, setCities] = useState(data.cities);
+  const [userId, setUserId] = useState(null);
 
-  const deleteCity = (id: string) => { 
-    setCities(cities.filter(city => city?.id !== id));
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      if (user) {
+        // User is signed in, set the user id state
+        console.log(user.uid);
+        
+        setUserId(user.uid);
+      } else {
+        // User is signed out        
+        setUserId(null);
+      }
+    });
+
+    // Unsubscribe from the listener when the component unmounts
+    return unsubscribe;
+  }, []);
+
+
+  const deleteCity = (id: string) => {
+    setCities(cities.filter((city) => city?.id !== id));
   };
 
   return (
