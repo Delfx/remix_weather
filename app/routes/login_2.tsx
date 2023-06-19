@@ -1,100 +1,22 @@
 import { useState, useEffect } from "react";
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  FacebookAuthProvider,
-} from "firebase/auth";
 import { useLoaderData } from "@remix-run/react";
 import { json, redirect } from "@remix-run/node";
-import { auth } from "~/utils/firebaseConfig";
-
-
-export const loader = async ({ request }) => {
-    return new Promise((resolve) => {
-      auth.onAuthStateChanged((user) => {
-        if (user) {
-          // If user is logged in, redirect to index page
-          resolve(redirect("/", { headers: { "Set-Cookie": `userId=${user.uid}` } }));
-        } else {
-          // If user is not logged in, just continue loading the login page
-          console.log('test');
-          resolve(json({ user: null }));
-        }
-      });
-    });
-  };
 
 export default function Login() {
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
-      setUser(firebaseUser);
-    });
-    // Clean up subscription on unmount
-    return () => unsubscribe();
-  }, []);
-
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    const auth = getAuth();
-
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const user = userCredential.user;
-      // ... Do something with user object
-    } catch (error) {
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      // ... Handle error
-    }
-  };
-
-  const signInWithGoogle = async () => {
-    const auth = getAuth();
-    const provider = new GoogleAuthProvider();
-
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      // ... Do something with user object
-    } catch (error) {
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      // ... Handle error
-    }
-  };
-
-  const signInWithFacebook = async () => {
-    const auth = getAuth();
-    const provider = new FacebookAuthProvider();
-
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      // ... Do something with user object
-    } catch (error) {
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      // ... Handle error
-    }
-  };
+  function clickOK() {
+    console.log("ok");
+  }
 
   return (
     <div className="bg-white lg:w-4/12 md:6/12 w-10/12 m-auto my-10 shadow-md">
       <div className="py-8 px-8 rounded-xl">
         <h1 className="font-medium text-2xl mt-3 text-center">Login</h1>
 
-        <form action="" className="mt-6" onSubmit={onSubmit}>
+        <form action="" className="mt-6">
           <div className="my-5 text-sm">
             <label htmlFor="email" className="block text-black">
               Email
@@ -152,7 +74,7 @@ export default function Login() {
           <div>
             <button
               className="text-center w-full text-white bg-blue-900 p-3 duration-300 rounded-sm hover:bg-blue-700"
-              onClick={signInWithFacebook}
+              onClick={clickOK}
             >
               Facebook
             </button>
@@ -160,7 +82,7 @@ export default function Login() {
           <div>
             <button
               className="text-center w-full text-white bg-red-400 p-3 duration-300 rounded-sm hover:bg-red-500"
-              onClick={signInWithGoogle}
+              onClick={clickOK}
             >
               Gmail
             </button>

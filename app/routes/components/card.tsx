@@ -1,6 +1,3 @@
-import { doc, deleteDoc } from "firebase/firestore";
-import { dbClient } from "~/utils/db.client"; // import dbClient from db.client.js here
-
 interface CardProps {
   id: string;
   city: string;
@@ -11,13 +8,7 @@ interface CardProps {
 
 export function Card({ city, temp, code, id, onDelete }: CardProps) {
   const deleteCity = async () => {
-    const documentRef = doc(dbClient, "cities", id);
-    try {
-      await deleteDoc(documentRef);
-      onDelete(); // call the onDelete function after city is deleted
-    } catch (error) {
-      console.error("Error removing document: ", error);
-    }
+    
   };
   
   return (

@@ -1,23 +1,18 @@
-import { collection, doc, setDoc } from "firebase/firestore";
 import { useState, useEffect } from "react";
-import { dbClient } from "~/utils/db.client";
 import "./style/AddButton.css";
 
-export function AddButton({ cityId, cityName, cityCode }) {
-  const [alertVisible, setAlertVisible] = useState(false); // Add state for controlling the visibility of the alert
-  const addToCollection = async () => {
-    try {
-      const citiesCollection = collection(dbClient, "cities"); // Create a reference to the "cities" collection
-      await setDoc(doc(citiesCollection, cityId), {
-        // Set the document in the collection
-        name: cityName,
-        code: cityCode,
-      });
-      setAlertVisible(true); // Show the alert after successfully adding the city
-    } catch (e) {
-      console.error("Error adding city: ", e);
-    }
-  };
+interface AddButtonProps {
+  cityId: number;
+  cityName: string;
+  cityCode: string;
+}
+
+export function AddButton({ cityId, cityName, cityCode }: AddButtonProps) {
+  const [alertVisible, setAlertVisible] = useState<boolean>(false);
+
+  function addToCollection(params: any) {
+    console.log("OK");
+  }
 
   useEffect(() => {
     if (alertVisible) {
@@ -31,10 +26,10 @@ export function AddButton({ cityId, cityName, cityCode }) {
     }
   }, [alertVisible]);
 
-  const alertStyle = {
+  const alertStyle: React.CSSProperties = {
     opacity: alertVisible ? 1 : 0,
     transition: "opacity 0.2s ease",
-    position: alertVisible ? "" : "absolute",
+    position: alertVisible ? "absolute" : undefined,
     // left: 0,
     // top: 0,
     zIndex: alertVisible ? 9999 : -1,

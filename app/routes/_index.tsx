@@ -2,9 +2,6 @@ import { V2_MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { Card } from "./components/card";
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { db } from "~/utils/db.server";
 
 export interface Root {
   place: Place;
@@ -41,22 +38,6 @@ export const meta: V2_MetaFunction = () => {
 };
 
 export const loader = async () => {
-  const fetchDataFromFirestore = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "cities"));
-      const data = querySnapshot.docs.map((doc) => {
-        return {
-          id: doc.id,
-          ...doc.data(),
-        };
-      });
-      return data;
-    } catch (error) {
-      console.log("Error fetching data from Firestore: ", error);
-      return [];
-    }
-  };
-
   const fetchWeatherData = async (city: string) => {
     try {
       const response = await fetch(
@@ -69,10 +50,13 @@ export const loader = async () => {
     }
   };
 
-  const citiesData = await fetchDataFromFirestore();
+  const citiesData = [{ code: "kaunas", id: 0, name: "Kaunas" }];
+
   const cities = await Promise.all(
     citiesData.map(async (cityData: any) => {
       const weatherData = await fetchWeatherData(cityData.code);
+
+      console.log(cityData);
 
       if (weatherData) {
         const today = new Date().toISOString().substring(0, 10);
@@ -109,25 +93,6 @@ export default function Index() {
   const data = useLoaderData<typeof loader>();
   const [cities, setCities] = useState(data.cities);
   const [userId, setUserId] = useState(null);
-
-  useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user) {
-        // User is signed in, set the user id state
-        console.log(user.uid);
-        
-        setUserId(user.uid);
-      } else {
-        // User is signed out        
-        setUserId(null);
-      }
-    });
-
-    // Unsubscribe from the listener when the component unmounts
-    return unsubscribe;
-  }, []);
-
 
   const deleteCity = (id: string) => {
     setCities(cities.filter((city) => city?.id !== id));
