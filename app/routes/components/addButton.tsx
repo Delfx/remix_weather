@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import "./style/AddButton.css";
 
 interface AddButtonProps {
-  cityId: number;
+  cityId: string;
   cityName: string;
   cityCode: string;
 }
