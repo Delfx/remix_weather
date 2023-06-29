@@ -1,46 +1,50 @@
-import { ActionFunction, ActionArgs, redirect } from "@remix-run/node";
-import { Form } from "@remix-run/react";
-import  bcrypt  from "bcryptjs";
+import { ActionFunction, ActionArgs, json } from "@remix-run/node";
+import { useActionData } from "@remix-run/react";
+import { withZod } from "@remix-validated-form/with-zod";
+import { ValidatedForm } from "remix-validated-form";
+import { z } from "zod";
+import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+const schema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Must be a valid email"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
+});
+
 export const action: ActionFunction = async ({ request }: ActionArgs) => {
-  if (request.method === "POST") {
-    const formData = await request.formData();
+  const validator = withZod(schema);
+  const validation = await validator.validate(await request.formData());
 
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+  if (validation.error) return json({ error: validation.error });
 
-    // Hash the password using bcryptjs
-    const hashedPassword = await bcrypt.hash(password || "", 10);
+  const { name, email, password } = validation.data;
 
-    // Save the user to the database using Prisma
-    await prisma.user.create({
-      data: {
-        name: name || "",
-        email: email || "",
-        pass: hashedPassword,
-      },
-    });
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Redirect to a success page or any other desired route
-    return redirect("/");
-  }
+  await prisma.user.create({
+    data: {
+      name,
+      email,
+      pass: hashedPassword,
+    },
+  });
 
-  return redirect("/"); // Redirect to the main page if the request method is not POST
+  return json({ success: true });
 };
 
 export default function CreateUser() {
+  const { data, error } = useActionData() || {};
+
   return (
     <div className="bg-white lg:w-4/12 md:6/12 w-10/12 m-auto my-10 shadow-md">
       <div className="py-8 px-8 rounded-xl">
         <h1 className="font-medium text-2xl mt-3 text-center">
           Create new Account
         </h1>
-
-        <Form method="post" className="mt-6">
+        <ValidatedForm validator={withZod(schema)} method="post">
           <div className="my-5 text-sm">
             <label htmlFor="name" className="block text-black">
               Name
@@ -50,7 +54,6 @@ export default function CreateUser() {
               id="name"
               name="name"
               className="rounded-sm px-4 py-3 mt-3 focus:outline-none bg-gray-100 w-full"
-              placeholder="Name"
             />
           </div>
           <div className="my-5 text-sm">
@@ -62,7 +65,6 @@ export default function CreateUser() {
               id="email"
               name="email"
               className="rounded-sm px-4 py-3 mt-3 focus:outline-none bg-gray-100 w-full"
-              placeholder="Email"
             />
           </div>
           <div className="my-5 text-sm">
@@ -74,9 +76,18 @@ export default function CreateUser() {
               id="password"
               name="password"
               className="rounded-sm px-4 py-3 mt-3 focus:outline-none bg-gray-100 w-full"
-              placeholder="Password"
             />
           </div>
+
+          {error && (
+            <div role="alert">
+              {Object.values(error).map((message, index) => (
+                <p key={index}>{message as string}</p>
+              ))}
+            </div>
+          )}
+
+          {data?.success && <div>Account created successfully!</div>}
 
           <button
             type="submit"
@@ -84,7 +95,7 @@ export default function CreateUser() {
           >
             Create user
           </button>
-        </Form>
+        </ValidatedForm>
       </div>
     </div>
   );
