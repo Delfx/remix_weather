@@ -1,7 +1,8 @@
-import { V2_MetaFunction } from "@remix-run/node";
+import { LoaderArgs, V2_MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { Card } from "./components/card";
 import { useEffect, useState } from "react";
+import { getSession } from "utils/session.server";
 
 export interface Root {
   place: Place;
@@ -37,7 +38,15 @@ export const meta: V2_MetaFunction = () => {
   return [{ title: "New Remix App" }];
 };
 
-export const loader = async () => {
+export async function loader({ request }: LoaderArgs) {
+
+  // Retrieves the current session from the incoming request's Cookie header
+  const session = await getSession(request.headers.get("Cookie"));
+
+  // Retrieve the session value set in the previous request
+  const message = session.get("success") || "No message found";
+
+
   const fetchWeatherData = async (city: string) => {
     try {
       const response = await fetch(
